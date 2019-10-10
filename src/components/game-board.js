@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import Camel from './camel'
-import Button from './button'
-import oasisButton from '../images/Button-Oasis.png'
-import desertButton from '../images/Button-Mirage.png'
+import Tile from './tile'
+import oasisTile from '../images/Button-Oasis.png'
+import desertTile from '../images/Button-Mirage.png'
 import blueCamel1 from '../images/Camel-Blue-1-0.png'
 import blueCamel2 from '../images/Camel-Blue-2-0.png'
 import blueCamel3 from '../images/Camel-Blue-3-0.png'
 import blueCamel4 from '../images/Camel-Blue-4-0.png'
+
 import greenCamel1 from '../images/Camel-Green-1-0.png'
 import greenCamel2 from '../images/Camel-Green-2-0.png'
 import greenCamel3 from '../images/Camel-Green-3-0.png'
@@ -23,7 +24,30 @@ import yellowCamel1 from '../images/Camel-Yellow-1-0.png'
 import yellowCamel2 from '../images/Camel-Yellow-2-0.png'
 import yellowCamel3 from '../images/Camel-Yellow-3-0.png'
 import yellowCamel4 from '../images/Camel-Yellow-4-0.png'
-const DRAGGABLES = ['blue', 'orange', 'green', 'yellow', 'white', 'desert', 'oasis']
+
+const blueCamelPieceView = [ blueCamel1, blueCamel2, blueCamel3, blueCamel4 ]
+const greenCamelPieceView = [ greenCamel1, greenCamel2, greenCamel3, greenCamel4 ]
+const yellowCamelPieceView = [ yellowCamel1, yellowCamel2, yellowCamel3, yellowCamel4 ]
+const whiteCamelPieceView = [ whiteCamel1, whiteCamel2, whiteCamel3, whiteCamel4 ]
+const orangeCamelPieceView = [ orangeCamel1, orangeCamel2, orangeCamel3, orangeCamel4 ]
+
+const icons = {
+    'blue': blueCamelPieceView, 
+    'green': greenCamelPieceView, 
+    'yellow': yellowCamelPieceView, 
+    'white': whiteCamelPieceView, 
+    'orange': orangeCamelPieceView
+}
+
+const CAMELS = ['blue', 'yellow', 'orange', 'green', 'white'];
+const TILES = ['oasis', 'desert'].map((tile, index, array) => {
+    const enumeratedTiles = []
+    for (let i = 1; i < 6; i++) {
+        enumeratedTiles[i - 1] = `${tile}${i}`
+    }
+    return enumeratedTiles
+}).reduce((prev, current) => prev.concat(current))
+const DRAGGABLES = CAMELS.concat(TILES)//['blue', 'orange', 'green', 'yellow', 'white', 'desert', 'oasis']
 const tileLocationToIconSideMap = {
     1: 1,
     2: 1,
@@ -116,12 +140,25 @@ function calcTie () {
 class GameBoard extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {
+        this.state = { 
             'beingDragged': false,
-            'desertPosition': {'top': '560px', 'left': '1090px'},
-            'oasisPosition':  {'top': '620px', 'left': '1000px'},
-            'bluePosition': tileLocations[1],
+            'bluePosition': {'top': '160px', 'left': '940px'},
+            'greenPosition': {'top': '270px', 'left': '1180px'},
+            'yellowPosition': {'top': '360px', 'left': '1120px'},
+            'whitePosition': {'top': '240px', 'left': '1050px'},
+            'orangePosition': {'top': '280px', 'left': '940px'},
         }
+
+        TILES.forEach(tile => {
+            this.state[`${tile}Position`] = tile.includes('oasis') ? {'top': '620px', 'left': '1000px'} : {'top': '560px', 'left': '1090px'}
+        })
+
+        /*
+        'desertPosition': {'top': '560px', 'left': '1090px'},
+        'oasisPosition':  {'top': '620px', 'left': '1000px'},
+        'bluePosition': tileLocations[1],
+        */
+        
         this.handleDragStart = this.handleDragStart.bind(this);
         this.handleDrag = this.handleDrag.bind(this);
         this.handleDragEnd = this.handleDragEnd.bind(this);
@@ -165,9 +202,10 @@ class GameBoard extends React.Component {
             e = e.changedTouches[e.changedTouches.length - 1]
         }
         
+        const draggedItem = this.state.beingDragged
         const previousMousePosition = this.state.mousePosition
+        const previousItemPosition = this.state[`${draggedItem}Position`]
         
-        const previousItemPosition = this.state[`${this.state.beingDragged}Position`]
         previousItemPosition.top = Number(previousItemPosition.top.slice(0, -2))
         previousItemPosition.left = Number(previousItemPosition.left.slice(0, -2))
 
@@ -178,7 +216,7 @@ class GameBoard extends React.Component {
         delta.left = currentMousePosition.left - previousMousePosition.left
         
         const state = { 'mousePosition': currentMousePosition }
-        state[`${this.state.beingDragged}Position`] = {
+        state[`${draggedItem}Position`] = {
             'top': previousItemPosition.top + delta.top + 'px',
             'left': previousItemPosition.left + delta.left + 'px'
         }
@@ -196,20 +234,27 @@ class GameBoard extends React.Component {
         this.setState(state)
     }
 
-    render () {
-        let beingDragged = this.state.beingDragged;
-        let bluePosition = this.state.bluePosition;
-        let desertPosition = this.state.desertPosition
-        let oasisPosition = this.state.oasisPosition
+    renderCamels () {
+        return CAMELS.map((camelColor, index) => {
+            const location = this.state[`${camelColor}Position`];
+            const image = icons[`${camelColor}`]
+            return <Camel color={camelColor} icon={image[0]} beingDragged={this.state.beingDragged == camelColor} handleMouseDown={this.handleDragStart.bind(this, camelColor)} tileLocation={location} rank={index} key={camelColor}/>
+        })
+    }
 
+    renderTiles () {
+        return TILES.map((tileName) => {
+            const icon = tileName.includes('oasis') ? oasisTile : desertTile
+            const location = this.state[`${tileName}Position`]
+            return <Tile type={tileName} icon={icon} beingDragged={this.state.beingDragged === tileName} handleMouseDown={this.handleDragStart.bind(this, tileName)} tileLocation={location} key={tileName}/>
+        })
+    }
+
+    render () {
+        
         return (<div className="gameboard" onMouseMove={this.handleDrag} onTouchMove={this.handleDrag} onMouseUp={this.handleDragEnd} onTouchEnd={this.handleDragEnd}>
-            <Button type="desert" icon={desertButton} beingDragged={beingDragged == 'desert'} handleMouseDown={this.handleDragStart.bind(this, 'desert')} tileLocation={desertPosition}/>
-            <Button type="oasis" icon={oasisButton} beingDragged={beingDragged == 'oasis'} handleMouseDown={this.handleDragStart.bind(this, 'oasis')} tileLocation={oasisPosition}/>
-            <Camel color="blue" icon={blueCamel1} beingDragged={beingDragged == 'blue'} handleMouseDown={this.handleDragStart.bind(this, 'blue')} tileLocation={bluePosition} rank={3}/>
-        {/* <Camel color="green" icon={greenCamel1} tileLocation={tileLocations[15]} rank={2}/>
-        <Camel color="orange" icon={orangeCamel1} tileLocation={tileLocations[16]} rank={1}/>
-        <Camel color="yellow" />
-        <Camel color="white" /> */}
+            {this.renderTiles()}
+            {this.renderCamels()}
         </div>);
     }
 }
