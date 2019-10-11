@@ -5,12 +5,12 @@ import redTrackMarker from '../images/Trackmarker-Red.png'
 function preventDefault (e) {
     e.preventDefault();
 }
-function TrackTile (props) {
+function TrackSegment (props) {
     const image = BLACK_TRACK_MARKER
     const style = Object.assign({
         'opacity': props.beingCovered ? '0.6' : '0',
         'zIndex': props.camelBeingDragged ? '10': '1'
-    }, props.location)
+    }, props.coordinates)
     return (<div className="track-tile" style={style} 
     onMouseDown={preventDefault} 
     onTouchStart={preventDefault} 
@@ -21,4 +21,4 @@ function TrackTile (props) {
     </div>);
 };
 
-export default TrackTile;
+export default TrackSegment;

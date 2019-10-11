@@ -1,7 +1,7 @@
 import React from 'react';
 import Camel from './camel'
 import DesertTile from './desert-tile'
-import TrackTile from './track-tile'
+import TrackSegment from './track-segment'
 
 const CAMELS = ['blue', 'yellow', 'orange', 'green', 'white'];
 const DESERT_TILE_TYPES = ['oasis', 'mirage']
@@ -13,7 +13,7 @@ const DESERT_TILES = DESERT_TILE_TYPES.map(tile => {
     return enumeratedTiles
 }).reduce((prev, current) => prev.concat(current))
 const DRAGGABLES = CAMELS.concat(DESERT_TILES)
-const TILE_LOCATION_TO_ICON_SIDE_MAP = {
+const TRACK_SEGMENT_TO_ICON_SIDE_MAP = {
     1: 1,
     2: 1,
     15: 1,
@@ -31,7 +31,7 @@ const TILE_LOCATION_TO_ICON_SIDE_MAP = {
     13: 4,
     14: 4,
 }
-const TRACK_TILE_LOCATIONS = [
+const TRACK_SEGMENT_COORDINATES = [
     { top: '370px', left: '820px' },
     { top: '420px', left: '920px' },
     { top: '470px', left: '1020px' },
@@ -68,7 +68,7 @@ class GameBoard extends React.Component {
         }
 
         DESERT_TILES.forEach(tile => {
-            state[`${tile}Position`] = tile.includes(DESERT_TILE_TYPES[0]) ? {'top': '620px', 'left': '1000px'} : {'top': '560px', 'left': '1090px'}
+            state[`${tile}Position`] = tile.includes(DESERT_TILE_TYPES[0]) ? {'top': '620px', 'left': '1000px'} : {'top': '530px', 'left': '1130px'}
         })
 
         this.state = state
@@ -77,8 +77,8 @@ class GameBoard extends React.Component {
         this.handleDrag = this.handleDrag.bind(this)
         this.handleDragEnd = this.handleDragEnd.bind(this)
 
-        this.handleTrackTileMouseEnter = this.handleTrackTileMouseEnter.bind(this)
-        this.handleTrackTileMouseOut = this.handleTrackTileMouseOut.bind(this)
+        this.handleTrackSegmentMouseEnter = this.handleTrackSegmentMouseEnter.bind(this)
+        this.handleTrackSegmentMouseOut = this.handleTrackSegmentMouseOut.bind(this)
     }
 
     componentDidMount () {
@@ -145,13 +145,13 @@ class GameBoard extends React.Component {
             'left': previousItemPosition.left + delta.left + 'px'
         }
 
-        if (this.state.tileBeingCovered) {
-            state[`${this.state.beingDragged}TrackLocation`] = this.state.tileBeingCovered
+        if (this.state.trackSegmentBeingCovered) {
+            state[`${this.state.beingDragged}TrackSegment`] = this.state.trackSegmentBeingCovered
         }
         if (TOUCHSCREEN) {
-            const closestTile = this.findClosestTrackTile(state[`${draggedItem}Position`])
-            if (closestTile) {
-                state.tileBeingCovered = closestTile
+            const closestTrackSegment = this.findClosestTrackSegment(state[`${draggedItem}Position`])
+            if (closestTrackSegment) {
+                state.trackSegmentBeingCovered = closestTrackSegment
             }
         }
         
@@ -166,13 +166,13 @@ class GameBoard extends React.Component {
         return { top, left }
     }
 
-    findClosestTrackTile (position) {
+    findClosestTrackSegment (position) {
         position = this.removePX(position)
         position.top += 100
         position.left += 55
         
-        for (let i = 0; i < TRACK_TILE_LOCATIONS.length; i++) {
-            const tileCoordinates = this.removePX(TRACK_TILE_LOCATIONS[i])
+        for (let i = 0; i < TRACK_SEGMENT_COORDINATES.length; i++) {
+            const tileCoordinates = this.removePX(TRACK_SEGMENT_COORDINATES[i])
             const tileTop = tileCoordinates.top
             const tileBottom = tileTop + 95
             const tileLeft = tileCoordinates.left
@@ -193,10 +193,10 @@ class GameBoard extends React.Component {
         e.preventDefault()
         document.body.className = ''
 
-        const state = { 'beingDragged': false, 'tileBeingCovered': false }
+        const state = { 'beingDragged': false, 'trackSegmentBeingCovered': false }
 
-        if (this.state.tileBeingCovered) {
-            state[`${draggedItem}Position`] = Object.assign({}, TRACK_TILE_LOCATIONS[this.state.tileBeingCovered - 1 ])
+        if (this.state.trackSegmentBeingCovered) {
+            state[`${draggedItem}Position`] = Object.assign({}, TRACK_SEGMENT_COORDINATES[this.state.trackSegmentBeingCovered - 1 ])
             
             const position = state[`${draggedItem}Position`]
             // adjust for camel and tile size differnce
@@ -216,24 +216,24 @@ class GameBoard extends React.Component {
         this.setState(state)
     }
 
-    handleTrackTileMouseEnter (tileNumber, e) {
+    handleTrackSegmentMouseEnter (tileNumber, e) {
         e.preventDefault()
         if (!this.state.beingDragged) return 
         console.log(tileNumber)
-        this.setState({ 'tileBeingCovered': tileNumber })
+        this.setState({ 'trackSegmentBeingCovered': tileNumber })
     }
 
-    handleTrackTileMouseOut (e) {
+    handleTrackSegmentMouseOut (e) {
         // console.log( e)
         e.preventDefault()
-        this.setState({ 'tileBeingCovered': false })
+        this.setState({ 'trackSegmentBeingCovered': false })
     }
 
     renderCamels () {
         return CAMELS.map((camelColor) => {
             const location = this.state[`${camelColor}Position`];
-            const trackLocation = this.state[`${camelColor}TrackLocation`]
-            const side = TILE_LOCATION_TO_ICON_SIDE_MAP[trackLocation] - 1
+            const trackSegment = this.state[`${camelColor}TrackSegment`]
+            const side = TRACK_SEGMENT_TO_ICON_SIDE_MAP[trackSegment] - 1
             return <Camel color={camelColor} side={side} beingDragged={this.state.beingDragged == camelColor} handleMouseDown={this.handleDragStart.bind(this, camelColor)} tileLocation={location} rank={3} key={camelColor}/>
         })
     }
@@ -251,16 +251,16 @@ class GameBoard extends React.Component {
         })
     }
 
-    renderTrackTiles () {
-        return TRACK_TILE_LOCATIONS.map((tileLocation, index) => {
+    renderTrackSegments () {
+        return TRACK_SEGMENT_COORDINATES.map((coordinates, index) => {
             const tileNumber = index + 1
-            return <TrackTile 
+            return <TrackSegment 
                 camelBeingDragged={this.state.beingDragged} 
-                beingCovered={this.state.tileBeingCovered === tileNumber}
-                location={tileLocation} 
+                beingCovered={this.state.trackSegmentBeingCovered === tileNumber}
+                coordinates={coordinates} 
                 trackTileNumber={tileNumber} 
-                handleMouseEnter={this.handleTrackTileMouseEnter.bind(this, tileNumber)}
-                handleMouseOut={this.handleTrackTileMouseOut} 
+                handleMouseEnter={this.handleTrackSegmentMouseEnter.bind(this, tileNumber)}
+                handleMouseOut={this.handleTrackSegmentMouseOut} 
                 key={index}/>
         })
     }
@@ -268,7 +268,7 @@ class GameBoard extends React.Component {
     render () {
         
         return (<div className="gameboard" onMouseMove={this.handleDrag} onTouchMove={this.handleDrag} onMouseUp={this.handleDragEnd} onTouchEnd={this.handleDragEnd}>
-            {this.renderTrackTiles()}
+            {this.renderTrackSegments()}
             {this.renderDesertTiles()}
             {this.renderCamels()}
         </div>);
