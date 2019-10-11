@@ -1,17 +1,18 @@
 import React from 'react';
 import Camel from './camel'
-import Tile from './tile'
+import DesertTile from './desert-tile'
 import TrackTile from './track-tile'
 
 const CAMELS = ['blue', 'yellow', 'orange', 'green', 'white'];
-const TILES = ['oasis', 'desert'].map((tile, index, array) => {
+const DESERT_TILE_TYPES = ['oasis', 'mirage']
+const DESERT_TILES = DESERT_TILE_TYPES.map(tile => {
     const enumeratedTiles = []
     for (let i = 1; i < 6; i++) {
         enumeratedTiles[i - 1] = `${tile}${i}`
     }
     return enumeratedTiles
 }).reduce((prev, current) => prev.concat(current))
-const DRAGGABLES = CAMELS.concat(TILES)
+const DRAGGABLES = CAMELS.concat(DESERT_TILES)
 const TILE_LOCATION_TO_ICON_SIDE_MAP = {
     1: 1,
     2: 1,
@@ -66,8 +67,8 @@ class GameBoard extends React.Component {
             'orangePosition': {'top': '280px', 'left': '940px'},
         }
 
-        TILES.forEach(tile => {
-            state[`${tile}Position`] = tile.includes('oasis') ? {'top': '620px', 'left': '1000px'} : {'top': '560px', 'left': '1090px'}
+        DESERT_TILES.forEach(tile => {
+            state[`${tile}Position`] = tile.includes(DESERT_TILE_TYPES[0]) ? {'top': '620px', 'left': '1000px'} : {'top': '560px', 'left': '1090px'}
         })
 
         this.state = state
@@ -201,7 +202,7 @@ class GameBoard extends React.Component {
             // adjust for camel and tile size differnce
             const top = typeof position.top === 'number' ? position.top : Number(position.top.slice(0, -2))
             const left = typeof position.left === 'number' ? position.left : Number(position.left.slice(0, -2))
-            if (draggedItem.includes('oasis') || draggedItem.includes('desert')) {
+            if (DESERT_TILES.indexOf(draggedItem) > -1) {
                 state[`${draggedItem}Position`].top = top - 50 + 'px'
                 state[`${draggedItem}Position`].left = left - 20 + 'px'
             } else {
@@ -237,15 +238,15 @@ class GameBoard extends React.Component {
         })
     }
 
-    renderTiles () {
-        return TILES.map((tileName) => {
-            const location = this.state[`${tileName}Position`]
-            return <Tile 
+    renderDesertTiles () {
+        return DESERT_TILES.map((tileName) => {
+            const coordinates = this.state[`${tileName}Position`]
+            return <DesertTile 
                 type={tileName.replace(/\d+/, '')} 
                 name={tileName} 
                 beingDragged={this.state.beingDragged === tileName} 
                 handleMouseDown={this.handleDragStart.bind(this, tileName)} 
-                tileLocation={location} 
+                coordinates={coordinates} 
                 key={tileName}/>
         })
     }
@@ -268,7 +269,7 @@ class GameBoard extends React.Component {
         
         return (<div className="gameboard" onMouseMove={this.handleDrag} onTouchMove={this.handleDrag} onMouseUp={this.handleDragEnd} onTouchEnd={this.handleDragEnd}>
             {this.renderTrackTiles()}
-            {this.renderTiles()}
+            {this.renderDesertTiles()}
             {this.renderCamels()}
         </div>);
     }
