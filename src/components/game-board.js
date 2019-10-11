@@ -203,10 +203,10 @@ class GameBoard extends React.Component {
             const top = typeof coordinates.top === 'number' ? coordinates.top : Number(coordinates.top.slice(0, -2))
             const left = typeof coordinates.left === 'number' ? coordinates.left : Number(coordinates.left.slice(0, -2))
             if (DESERT_TILES.indexOf(draggedItem) > -1) {
-                state[`${draggedItem}Coordinates`].top = top - 50 + 'px'
-                state[`${draggedItem}Coordinates`].left = left - 20 + 'px'
+                coordinates.top = top - 50 + 'px'
+                coordinates.left = left - 20 + 'px'
             } else {
-                state[`${draggedItem}Coordinates`].top = top - 60 + 'px'
+                coordinates.top = top - 60 + 'px'
             }
             
         } else {
