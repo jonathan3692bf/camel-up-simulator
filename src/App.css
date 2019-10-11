@@ -44,11 +44,22 @@
   user-select: none;
 }
 
-.button {
+.tile,
+.track-tile {
   position: absolute;
-  cursor: grab;
-  -moz-user-select: none;
+  /* -moz-user-select: none;
   -khtml-user-select: none;
   -webkit-user-select: none;
-  user-select: none;
+  user-select: none; */
+}
+
+.track-tile {
+  width: 105px;
+  height: 105px;
+  transform: rotate(-45deg) skew(20deg, 20deg) translate(25px, -15px);
+  /* background: lightblue; */
+}
+
+.track-tile img {
+  transform: skew(-20deg, -20deg) rotate(45deg) scale(1.5) translate(4px, 8px);
 }
