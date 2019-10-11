@@ -36,7 +36,7 @@ const icons = {
 function Camel (props) {
     const images = icons[`${props.color}`]
     const image = images[props.side > -1 ? props.side : 0]
-    const style = Object.assign({'zIndex': props.beingDragged ? '1' : props.rank, 'cursor': props.beingDragged ? 'grabbing' : 'grab'}, props.tileLocation)
+    const style = Object.assign({'zIndex': props.beingDragged ? '1' : props.rank, 'cursor': props.beingDragged ? 'grabbing' : 'grab'}, props.coordinates)
     return (<div className="camel" style={style} onMouseDown={props.handleMouseDown} onTouchStart={props.handleMouseDown}>
         <img src={image} alt={`${props.color} camel`}/>
     </div>);
