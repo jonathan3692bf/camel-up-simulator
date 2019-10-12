@@ -93,6 +93,8 @@ class GameBoard extends React.Component {
         document.removeEventListener('touchmove', (e) => e.preventDefault());
     }
 
+
+
     handleDragStart (draggedItem, e) {
         if (DRAGGABLES.indexOf(draggedItem) < 0) return
         
@@ -113,6 +115,7 @@ class GameBoard extends React.Component {
 
     handleDrag (e) {
         if (!this.state.beingDragged) return
+        
         // e.stopPropagation()
         e.preventDefault()
         let TOUCHSCREEN = false
@@ -219,7 +222,6 @@ class GameBoard extends React.Component {
     handleTrackSegmentMouseEnter (trackSegmentNumber, e) {
         e.preventDefault()
         if (!this.state.beingDragged) return 
-        console.log(trackSegmentNumber)
         this.setState({ 'trackSegmentBeingCovered': trackSegmentNumber })
     }
 
@@ -229,16 +231,35 @@ class GameBoard extends React.Component {
         this.setState({ 'trackSegmentBeingCovered': false })
     }
 
+    calculateRank () {
+        const trackSegmentByColor = CAMELS.map(color => {
+            const trackSegment = this.state[`${color}TrackSegment`] ? this.state[`${color}TrackSegment`] : 0
+            return { color, trackSegment }
+        })
+        trackSegmentByColor.sort((a, b) => a.trackSegment < b.trackSegment)
+        
+        const rank = CAMELS.map(color => {
+            const rank = trackSegmentByColor.findIndex(segment => color === segment.color) + 1
+            return { color, rank, trackSegment: trackSegmentByColor[rank - 1].trackSegment}
+        })
+        
+        return rank
+    }
+
     renderCamels () {
-        return CAMELS.map((camelColor) => {
-            return <Camel 
-                color={camelColor} 
-                side={TRACK_SEGMENT_TO_ICON_SIDE_MAP[this.state[`${camelColor}TrackSegment`]] - 1} 
-                beingDragged={this.state.beingDragged == camelColor} 
-                handleMouseDown={this.handleDragStart.bind(this, camelColor)} 
-                coordinates={this.state[`${camelColor}Coordinates`]} 
-                rank={3} 
-                key={camelColor}/>
+        const rank = this.calculateRank()
+        rank.sort((a, b) => a.rank > b.rank)
+        
+        return rank.map(({ color, rank, trackSegment }) => {
+            const side = trackSegment > 0 ? TRACK_SEGMENT_TO_ICON_SIDE_MAP[trackSegment] - 1 : 0
+            return <Camel
+                color={color}
+                side={side}
+                beingDragged={this.state.beingDragged == color} 
+                handleMouseDown={this.handleDragStart.bind(this, color)} 
+                coordinates={this.state[`${color}Coordinates`]} 
+                rank={rank} 
+                key={color}/>
         })
     }
 

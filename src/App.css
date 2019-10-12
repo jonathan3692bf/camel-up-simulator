@@ -20,14 +20,33 @@
   -webkit-user-select: none;
   user-select: none;
 }
+.camel-rank {
+  position: absolute;
+}
+.camel-rank-right-0 {
+  top: 50px;
+  left: 25px;
+}
+.camel-rank-right-2 {
+  top: 55px;
+  left: 40px;
+}
+.camel-rank-left-1 {
+  top: 50px;
+  left: 60px;
+}
+.camel-rank-left-3 {
+  top: 55px;
+  left: 45px;
+}
 
 .tile,
 .track-tile {
   position: absolute;
-  /* -moz-user-select: none;
+  -moz-user-select: none;
   -khtml-user-select: none;
   -webkit-user-select: none;
-  user-select: none; */
+  user-select: none;
 }
 
 .track-tile {
