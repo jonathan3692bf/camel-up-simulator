@@ -55,7 +55,7 @@ function Camel (props) {
     const image = images[props.side > -1 ? props.side : 0]
     const rankSide = props.side % 2 === 0 ? 'right' : 'left'
     const rankImage = RANK_IMAGES[rankSide][props.rank - 1]
-    const style = Object.assign({'zIndex': props.beingDragged ? '1' : props.rank, 'cursor': props.beingDragged ? 'grabbing' : 'grab'}, props.coordinates)
+    const style = Object.assign({'zIndex': props.beingDragged ? '1' : props.zIndex + 2, 'cursor': props.beingDragged ? 'grabbing' : 'grab'}, props.coordinates)
     return (<div className="camel" style={style} onMouseDown={props.handleMouseDown} onTouchStart={props.handleMouseDown}>
         <img className="camel-image" src={image} alt={`${props.color} camel`}/>
         <img className={`camel-rank camel-rank-${rankSide}-${props.side}`} src={rankImage} alt={`rank: ${props.rank}`}/>

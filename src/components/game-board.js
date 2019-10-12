@@ -12,7 +12,6 @@ const DESERT_TILES = DESERT_TILE_TYPES.map(tile => {
     }
     return enumeratedTiles
 }).reduce((prev, current) => prev.concat(current))
-const DRAGGABLES = CAMELS.concat(DESERT_TILES)
 const TRACK_SEGMENT_TO_ICON_SIDE_MAP = {
     1: 1,
     2: 1,
@@ -65,6 +64,7 @@ class GameBoard extends React.PureComponent {
             'yellowCoordinates': {'top': '360px', 'left': '1120px'},
             'whiteCoordinates': {'top': '240px', 'left': '1050px'},
             'orangeCoordinates': {'top': '280px', 'left': '940px'},
+            'trackSegmentOccupants': Array(TRACK_SEGMENT_COORDINATES.length).fill([])
         }
 
         DESERT_TILES.forEach(tile => {
@@ -96,11 +96,21 @@ class GameBoard extends React.PureComponent {
 
 
     handleDragStart (draggedItem, e) {
-        if (DRAGGABLES.indexOf(draggedItem) < 0) return
+        if (typeof e !== 'object') return
         
         // e.stopPropagation()
         e.preventDefault()
-        const state = { 'beingDragged': draggedItem, mouseCoordinates: {} };
+        let draggedItems = [ draggedItem ]
+        const startTrackSegement = this.state[`${draggedItem}TrackSegment`] - 1
+        if (startTrackSegement) {
+            const trackSegmentOccupants = this.state.trackSegmentOccupants[startTrackSegement]
+            if (trackSegmentOccupants.length) {
+                const positionOfStack = trackSegmentOccupants.indexOf(draggedItems[0])
+                draggedItems = trackSegmentOccupants.slice(positionOfStack)
+            }
+        }
+        
+        const state = { 'beingDragged': draggedItems, mouseCoordinates: {} };
         
         document.body.className = 'no-touch-scroll'
         if (e.changedTouches && e.changedTouches.length) {
@@ -108,7 +118,10 @@ class GameBoard extends React.PureComponent {
         }
         state.mouseCoordinates.top = e.pageY
         state.mouseCoordinates.left = e.pageX
-        state[`${draggedItem}LastCoordinates`] = this.state[`${draggedItem}Coordinates`]
+        draggedItems.forEach(item => {
+            state[`${item}LastCoordinates`] = this.state[`${item}Coordinates`]
+            state[`${item}SourceTrackSegment`] = startTrackSegement
+        })
         
         this.setState(state)
     }
@@ -124,18 +137,8 @@ class GameBoard extends React.PureComponent {
             TOUCHSCREEN = true
         }
         
-        const draggedItem = this.state.beingDragged
+        const draggedItems = this.state.beingDragged
         const previousMouseCoordinates = this.state.mouseCoordinates
-        const previousItemCoordinates = Object.assign({}, this.state[`${draggedItem}Coordinates`])
-        
-        if (typeof previousItemCoordinates.top === 'string') {
-            previousItemCoordinates.top = Number(previousItemCoordinates.top.slice(0, -2))
-        }
-        
-        if (typeof previousItemCoordinates.left === 'string') {
-            previousItemCoordinates.left = Number(previousItemCoordinates.left.slice(0, -2))
-        }
-
         const currentMouseCoordinates = { top: e.pageY, left: e.pageX }
         
         const delta = {}
@@ -143,29 +146,32 @@ class GameBoard extends React.PureComponent {
         delta.left = currentMouseCoordinates.left - previousMouseCoordinates.left
         
         const state = { 'mouseCoordinates': currentMouseCoordinates }
-        state[`${draggedItem}Coordinates`] = {
-            'top': previousItemCoordinates.top + delta.top + 'px',
-            'left': previousItemCoordinates.left + delta.left + 'px'
-        }
-
-        if (this.state.trackSegmentBeingCovered) {
-            state[`${this.state.beingDragged}TrackSegment`] = this.state.trackSegmentBeingCovered
-        }
-        if (TOUCHSCREEN) {
-            const closestTrackSegment = this.findClosestTrackSegment(state[`${draggedItem}Coordinates`])
-            if (closestTrackSegment) {
-                state.trackSegmentBeingCovered = closestTrackSegment
+        draggedItems.forEach((draggedItem, index) => {
+            const previousItemCoordinates = this.removePX(this.state[`${draggedItem}Coordinates`])
+            state[`${draggedItem}Coordinates`] = {
+                'top': previousItemCoordinates.top + delta.top + 'px',
+                'left': previousItemCoordinates.left + delta.left + 'px'
             }
-        }
-        
 
+            if (this.state.trackSegmentBeingCovered) {
+                state[`${draggedItem}TrackSegment`] = this.state.trackSegmentBeingCovered
+            }
+
+            if (TOUCHSCREEN && index === 0) {
+                const closestTrackSegment = this.findClosestTrackSegment(state[`${draggedItem}Coordinates`])
+                if (closestTrackSegment) {
+                    state.trackSegmentBeingCovered = closestTrackSegment
+                }
+            }
+        })
+        
         this.setState(state)
     }
 
     removePX (coordinates) {
-        coordinates = Object.assign({}, coordinates)
-        const top = Number(coordinates.top.slice(0, -2))
-        const left = Number(coordinates.left.slice(0, -2))
+        const coords = Object.assign({}, coordinates)
+        const top = Number(coords.top.slice(0, -2))
+        const left = Number(coords.left.slice(0, -2))
         return { top, left }
     }
 
@@ -190,30 +196,63 @@ class GameBoard extends React.PureComponent {
     }
 
     handleDragEnd (e) {
-        const draggedItem = this.state.beingDragged
-        if (!draggedItem) return
+        const draggedItems = this.state.beingDragged
+        if (!draggedItems) return
         // e.stopPropagation()
         e.preventDefault()
         document.body.className = ''
 
-        const state = { 'beingDragged': false, 'trackSegmentBeingCovered': false }
-
-        if (this.state.trackSegmentBeingCovered) {
-            state[`${draggedItem}Coordinates`] = Object.assign({}, TRACK_SEGMENT_COORDINATES[this.state.trackSegmentBeingCovered - 1 ])
-            
-            const coordinates = state[`${draggedItem}Coordinates`]
-            // adjust for camel and tile size differnce
-            const top = typeof coordinates.top === 'number' ? coordinates.top : Number(coordinates.top.slice(0, -2))
-            const left = typeof coordinates.left === 'number' ? coordinates.left : Number(coordinates.left.slice(0, -2))
-            if (DESERT_TILES.indexOf(draggedItem) > -1) {
-                coordinates.top = top - 50 + 'px'
-                coordinates.left = left - 20 + 'px'
+        const state = { 
+            'beingDragged': false, 
+            'trackSegmentBeingCovered': false,
+            'trackSegmentOccupants': this.state.trackSegmentOccupants.slice()
+        }
+        let targetTrackSegment = this.state.trackSegmentBeingCovered
+        if (targetTrackSegment) {
+            targetTrackSegment--
+            const currentTrackSegmentOccupants = this.state.trackSegmentOccupants[targetTrackSegment]
+            if (currentTrackSegmentOccupants.length) {
+                state.trackSegmentOccupants[targetTrackSegment] = state.trackSegmentOccupants[targetTrackSegment].concat(draggedItems)
             } else {
-                coordinates.top = top - 60 + 'px'
+                state.trackSegmentOccupants[targetTrackSegment] = draggedItems
             }
-            
-        } else {
-            state[`${draggedItem}Coordinates`] = this.state[`${draggedItem}LastCoordinates`]
+        }
+        
+        draggedItems.forEach(draggedItem => {
+            if (targetTrackSegment) {
+                state[`${draggedItem}Coordinates`] = this.removePX(TRACK_SEGMENT_COORDINATES[targetTrackSegment])
+                
+                const coordinates = state[`${draggedItem}Coordinates`]
+                // adjust for camel and tile size differnce
+                if (DESERT_TILES.indexOf(draggedItem) > -1) {
+                    coordinates.top = coordinates.top - 50 + 'px'
+                    coordinates.left = coordinates.left - 20 + 'px'
+                } else {
+                    coordinates.top = coordinates.top - 60 + 'px'
+                    coordinates.left += 'px'
+                }
+
+                const sourceTrackSegment = this.state[`${draggedItem}SourceTrackSegment`]
+                if (sourceTrackSegment) {
+                    state.trackSegmentOccupants[sourceTrackSegment] = state.trackSegmentOccupants[sourceTrackSegment].filter(item => item !== draggedItem)
+                }
+            } else {
+                state[`${draggedItem}Coordinates`] = this.state[`${draggedItem}LastCoordinates`]
+            }
+        })
+        if (targetTrackSegment && state.trackSegmentOccupants[targetTrackSegment].length > 1) {
+            state.trackSegmentOccupants[targetTrackSegment].forEach((item, index) => {
+                let coordinates
+                if (state[`${item}Coordinates`]) {
+                    coordinates = this.removePX(state[`${item}Coordinates`])
+                    coordinates.top = coordinates.top - 60*(index) + 'px'
+                    coordinates.left += 'px'
+                } else if (this.state[`${item}Coordinates`]) {
+                    coordinates = Object.assign({}, this.state[`${item}Coordinates`])
+                }
+                
+                state[`${item}Coordinates`] = coordinates
+            })
         }
         
         this.setState(state)
@@ -232,26 +271,31 @@ class GameBoard extends React.PureComponent {
     }
 
     calculateRank () {
-        const trackSegmentByColor = CAMELS.map(color => {
-            const trackSegment = this.state[`${color}TrackSegment`] ? this.state[`${color}TrackSegment`] : 0
-            return { color, trackSegment }
+        const rank = []
+        this.state.trackSegmentOccupants.forEach(trackSegment => {
+            if (!trackSegment.length) return
+            if (DESERT_TILES.indexOf(trackSegment[0]) > -1) return
+            trackSegment.forEach(occupant => rank.unshift(occupant))
         })
-        trackSegmentByColor.sort((a, b) => a.trackSegment < b.trackSegment)
-        
-        const rank = CAMELS.map(color => {
-            const rank = trackSegmentByColor.findIndex(segment => color === segment.color) + 1
-            return { color, rank, trackSegment: trackSegmentByColor[rank - 1].trackSegment}
-        })
+        if (!rank.length) {
+            return CAMELS
+        } else if (rank.length < 5) {
+            return rank.concat(CAMELS.filter(camel => {
+                return rank.indexOf(camel) < 0
+            }))
+        }
         
         return rank
     }
 
     renderCamels () {
-        const rank = this.calculateRank()
-        rank.sort((a, b) => a.rank > b.rank)
-        
-        return rank.map(({ color, rank, trackSegment }) => {
+        const rankList = this.calculateRank()
+        return rankList.map((color, index) => {
+            const rank = index + 1
+            const trackSegment = this.state[`${color}TrackSegment`] ? this.state[`${color}TrackSegment`] : 0
             const side = trackSegment > 0 ? TRACK_SEGMENT_TO_ICON_SIDE_MAP[trackSegment] - 1 : 0
+            const positionInStack = trackSegment > 0 ? this.state.trackSegmentOccupants[trackSegment - 1].indexOf(color) : 0
+            
             return <Camel
                 color={color}
                 side={side}
@@ -259,7 +303,8 @@ class GameBoard extends React.PureComponent {
                 handleMouseDown={this.handleDragStart.bind(this, color)} 
                 coordinates={this.state[`${color}Coordinates`]} 
                 rank={rank} 
-                key={color}/>
+                zIndex={positionInStack}
+                key={color}/> 
         })
     }
 
