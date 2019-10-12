@@ -10,7 +10,7 @@ function TrackSegment (props) {
     const style = Object.assign({
         'opacity': props.beingCovered ? '0.6' : '0',
         'zIndex': props.camelBeingDragged ? '10': '1',
-        'cursor': props.camelBeingDragged ? 'grabbing': 'mouse'
+        'cursor': props.camelBeingDragged ? 'grabbing': 'unset'
     }, props.coordinates)
     return (<div className="track-tile" style={style} 
     onMouseDown={preventDefault} 
