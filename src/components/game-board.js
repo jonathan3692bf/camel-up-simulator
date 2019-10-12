@@ -55,7 +55,7 @@ function calcTie () {
     // top + (rank - 1)*60px
 }
 
-class GameBoard extends React.Component {
+class GameBoard extends React.PureComponent {
     constructor (props) {
         super(props);
         const state = { 
