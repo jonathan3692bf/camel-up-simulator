@@ -5,6 +5,52 @@
   width: 1365px;
   height: 768px;
 }
+.gameboard-top {
+  height: 28px;
+  width: 1365px;
+  background-image: url("./images/Border-Top.png");
+}
+
+.gameboard-bottom {
+  height: 14px;
+  width: 1365px;
+  position: absolute;
+  top: 765px;
+  background-image: url("./images/Border-Bottom.png");
+}
+.gameboard-dice-bar {
+  position: absolute;
+  top: 719px;
+  left: 542.5px;
+  width: 280px;
+  height: 59px;
+  z-index: 10;
+  background-image: url("./images/Dice-Bar.png");
+}
+
+.gameboard-dice-bar-hitbox {
+  height: 45px;
+  width: 45px;
+  display: inline-block;
+  top: 10px;
+  left: 15px;
+  position: relative;
+  margin-right: 5px;
+}
+
+.gameboard-dice-bar-hitbox:hover {
+  cursor: pointer;
+}
+
+.gameboard-dice-bar-hitbox img {
+  height: 45px;
+  width: 45px;
+  opacity: 0.45;
+}
+
+.gameboard-dice-bar-hitbox img.rolled {
+  opacity: 1;
+}
 
 .no-touch-scroll {
   touch-action: none

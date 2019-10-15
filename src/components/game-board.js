@@ -2,6 +2,7 @@ import React from 'react';
 import Camel from './camel'
 import DesertTile from './desert-tile'
 import TrackSegment from './track-segment'
+import DiceBar from './dice-bar'
 
 const CAMELS = ['blue', 'yellow', 'orange', 'green', 'white'];
 const DESERT_TILE_TYPES = ['oasis', 'mirage']
@@ -49,11 +50,6 @@ const TRACK_SEGMENT_COORDINATES = [
     { top: '320px', left: '720px' }
 ]
 
-function calcTie () {
-
-    // top + (rank - 1)*60px
-}
-
 class GameBoard extends React.PureComponent {
     constructor (props) {
         super(props);
@@ -79,6 +75,8 @@ class GameBoard extends React.PureComponent {
 
         this.handleTrackSegmentMouseEnter = this.handleTrackSegmentMouseEnter.bind(this)
         this.handleTrackSegmentMouseOut = this.handleTrackSegmentMouseOut.bind(this)
+
+        this.handleDiceClick = this.handleDiceClick.bind(this)
     }
 
     componentDidMount () {
@@ -335,12 +333,33 @@ class GameBoard extends React.PureComponent {
         })
     }
 
+    handleDiceClick(color) {
+        const state = {}
+        if (this.state[`${color}DiceRolled`]) {
+            state[`${color}DiceRolled`] = false
+            
+        } else {
+            state[`${color}DiceRolled`] = true
+        }
+        this.setState(state)
+    }
+
     render () {
         
         return (<div className="gameboard" onMouseMove={this.handleDrag} onTouchMove={this.handleDrag} onMouseUp={this.handleDragEnd} onTouchEnd={this.handleDragEnd}>
+            <div className="gameboard-top"></div>
+        
             {this.renderTrackSegments()}
             {this.renderDesertTiles()}
             {this.renderCamels()}
+            <DiceBar onDiceClick={this.handleDiceClick} 
+                blueDiceRolled={this.state.blueDiceRolled}
+                greenDiceRolled={this.state.greenDiceRolled}
+                orangeDiceRolled={this.state.orangeDiceRolled}
+                whiteDiceRolled={this.state.whiteDiceRolled}
+                yellowDiceRolled={this.state.yellowDiceRolled}
+            />
+            <div className="gameboard-bottom"></div>
         </div>);
     }
 }
