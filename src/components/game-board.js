@@ -55,6 +55,7 @@ class GameBoard extends React.PureComponent {
         super(props);
         const state = { 
             'beingDragged': false,
+            'draggedItems': [],
             'blueCoordinates': {'top': '160px', 'left': '940px'},
             'greenCoordinates': {'top': '270px', 'left': '1180px'},
             'yellowCoordinates': {'top': '360px', 'left': '1120px'},
@@ -108,7 +109,7 @@ class GameBoard extends React.PureComponent {
             }
         }
         
-        const state = { 'beingDragged': draggedItems, mouseCoordinates: {} };
+        const state = { draggedItems, mouseCoordinates: {} };
         
         document.body.className = 'no-touch-scroll'
         if (e.changedTouches && e.changedTouches.length) {
@@ -125,7 +126,7 @@ class GameBoard extends React.PureComponent {
     }
 
     handleDrag (e) {
-        if (!this.state.beingDragged) return
+        if (this.state.draggedItems.length === 0) return
         
         // e.stopPropagation()
         e.preventDefault()
@@ -135,7 +136,7 @@ class GameBoard extends React.PureComponent {
             TOUCHSCREEN = true
         }
         
-        const draggedItems = this.state.beingDragged
+        const draggedItems = this.state.draggedItems
         const previousMouseCoordinates = this.state.mouseCoordinates
         const currentMouseCoordinates = { top: e.pageY, left: e.pageX }
         
@@ -143,7 +144,7 @@ class GameBoard extends React.PureComponent {
         delta.top = currentMouseCoordinates.top - previousMouseCoordinates.top
         delta.left = currentMouseCoordinates.left - previousMouseCoordinates.left
         
-        const state = { 'mouseCoordinates': currentMouseCoordinates }
+        const state = { 'beingDragged': true, 'mouseCoordinates': currentMouseCoordinates }
         draggedItems.forEach((draggedItem, index) => {
             const previousItemCoordinates = this.removePX(this.state[`${draggedItem}Coordinates`])
             state[`${draggedItem}Coordinates`] = {
@@ -194,14 +195,23 @@ class GameBoard extends React.PureComponent {
     }
 
     handleDragEnd (e) {
-        const draggedItems = this.state.beingDragged
-        if (!draggedItems) return
+        const beingDragged = this.state.beingDragged
+        const draggedItems = this.state.draggedItems
+        if (!beingDragged || draggedItems.length === 0) {
+            // This is the case where a user clicks on something but doesn't move the mouse
+            return this.setState({ 
+                'beingDragged': false, 
+                'draggedItems': [],
+                'trackSegmentBeingCovered': false
+            })
+        }
         // e.stopPropagation()
         e.preventDefault()
         document.body.className = ''
 
         const state = { 
             'beingDragged': false, 
+            'draggedItems': [],
             'trackSegmentBeingCovered': false,
             'trackSegmentOccupants': this.state.trackSegmentOccupants.slice()
         }
@@ -265,6 +275,7 @@ class GameBoard extends React.PureComponent {
     handleTrackSegmentMouseOut (e) {
         // console.log( e)
         e.preventDefault()
+        if (!this.state.beingDragged) return 
         this.setState({ 'trackSegmentBeingCovered': false })
     }
 
@@ -293,11 +304,11 @@ class GameBoard extends React.PureComponent {
             const trackSegment = this.state[`${color}TrackSegment`] ? this.state[`${color}TrackSegment`] : 0
             const side = trackSegment > 0 ? TRACK_SEGMENT_TO_ICON_SIDE_MAP[trackSegment] - 1 : 0
             const positionInStack = trackSegment > 0 ? this.state.trackSegmentOccupants[trackSegment - 1].indexOf(color) : 0
-            
+            console.log(color, rank, trackSegment, side, positionInStack)
             return <Camel
                 color={color}
                 side={side}
-                beingDragged={this.state.beingDragged == color} 
+                beingDragged={this.state.draggedItems.indexOf(color) > -1 } 
                 handleMouseDown={this.handleDragStart.bind(this, color)} 
                 coordinates={this.state[`${color}Coordinates`]} 
                 rank={rank} 
@@ -312,7 +323,7 @@ class GameBoard extends React.PureComponent {
             return <DesertTile 
                 type={tileName.replace(/\d+/, '')} 
                 name={tileName} 
-                beingDragged={this.state.beingDragged === tileName} 
+                beingDragged={this.state.draggedItems.indexOf(tileName) > -1} 
                 handleMouseDown={this.handleDragStart.bind(this, tileName)} 
                 coordinates={this.state[`${tileName}Coordinates`]} 
                 key={tileName}/>
