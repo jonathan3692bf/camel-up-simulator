@@ -16,7 +16,7 @@ function TrackSegment (props) {
     onMouseDown={preventDefault} 
     onTouchStart={preventDefault} 
     // onTouchMove={()=> console.log(props.trackTileNumber)}
-    onMouseEnter={props.handleMouseEnter} 
+    onMouseOver={props.handleMouseOver} 
     onMouseOut={props.handleMouseOut}>
         <img src={image} alt={`track tile`}/>
     </div>);
