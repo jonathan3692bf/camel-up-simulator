@@ -6,6 +6,7 @@ import DiceBar from './dice-bar'
 
 const CAMELS = ['blue', 'yellow', 'orange', 'green', 'white'];
 const DESERT_TILE_TYPES = ['oasis', 'mirage']
+const DESERT_TILE_POSITIONS = [ {'top': '560px', 'left': '1160px'} , {'top': '650px', 'left': '1030px'} ]
 const DESERT_TILES = DESERT_TILE_TYPES.map(tile => {
     const enumeratedTiles = []
     for (let i = 1; i < 6; i++) {
@@ -48,7 +49,7 @@ class GameBoard extends React.PureComponent {
         }
 
         DESERT_TILES.forEach(tile => {
-            state[`${tile}Coordinates`] = tile.includes(DESERT_TILE_TYPES[0]) ? {'top': '560px', 'left': '1160px'} : {'top': '650px', 'left': '1030px'} 
+            state[`${tile}Coordinates`] = tile.slice(0,-1) === DESERT_TILE_TYPES[0] ? DESERT_TILE_POSITIONS[0] : DESERT_TILE_POSITIONS[1]
         })
 
         this.state = state
@@ -147,7 +148,6 @@ class GameBoard extends React.PureComponent {
                 const currentTrackSegmentOccupants = this.state.trackSegmentOccupants[currentTrackSegmentBeingCovered]
                 if (DESERT_TILES.indexOf(draggedItem) > -1 && currentTrackSegmentOccupants.length) {
                     state.validMove = false
-                    // state[`${draggedItem}TrackSegment`] = currentTrackSegmentBeingCovered
                 } else if (DESERT_TILES.indexOf(currentTrackSegmentOccupants[0]) > -1) {
                     state.validMove = true
                     if (DESERT_TILE_TYPES[0] == currentTrackSegmentOccupants[0].slice(0, -1)) {
@@ -163,14 +163,6 @@ class GameBoard extends React.PureComponent {
                     state.validMove = true
                     state[`${draggedItem}TrackSegment`] = currentTrackSegmentBeingCovered
                 }
-                
-                // if the draggedItem is a desert tile and the occupiedTile is a desert tile
-                //     validMove = false
-                // if the draggedItem is a desert tile and the occupiedTile is not empty
-                //     validMove = false
-                // thus if draggedItem is a desert and the occupiedTrack is empty
-                //     validMOve = true
-                
             }
 
             if (TOUCHSCREEN && index === 0) {
@@ -235,6 +227,7 @@ class GameBoard extends React.PureComponent {
         }
         const targetTrackSegment = this.state.trackSegmentBeingCovered
         draggedItems.forEach((draggedItem, index) => {
+            const sourceTrackSegment = this.state[`${draggedItem}SourceTrackSegment`]
             if (targetTrackSegment >= 0 && this.state.validMove) {
                 state[`${draggedItem}Coordinates`] = this.removePX(TRACK_SEGMENT_COORDINATES[targetTrackSegment])
                 
@@ -247,8 +240,7 @@ class GameBoard extends React.PureComponent {
                     coordinates.top = coordinates.top - 60 + 'px'
                     coordinates.left += 'px'
                 }
-
-                const sourceTrackSegment = this.state[`${draggedItem}SourceTrackSegment`]
+                
                 if (sourceTrackSegment !== targetTrackSegment) {
                     if (index === 0) {
                         state.trackSegmentOccupants[targetTrackSegment] = state.trackSegmentOccupants[targetTrackSegment].concat(draggedItems)
@@ -258,7 +250,14 @@ class GameBoard extends React.PureComponent {
                     }   
                 }
             } else {
-                state[`${draggedItem}Coordinates`] = Object.assign({}, this.state[`${draggedItem}LastCoordinates`])
+                if (targetTrackSegment === undefined && DESERT_TILES.indexOf(draggedItem) > -1) {
+                    state[`${draggedItem}Coordinates`] = draggedItem.slice(0,-1) === DESERT_TILE_TYPES[0] ? DESERT_TILE_POSITIONS[0] : DESERT_TILE_POSITIONS[1]
+                    state.trackSegmentOccupants[sourceTrackSegment] = state.trackSegmentOccupants[sourceTrackSegment].filter(item => item !== draggedItem)
+                    state[`${draggedItem}TrackSegment`] = undefined
+                } else {
+                    state[`${draggedItem}Coordinates`] = Object.assign({}, this.state[`${draggedItem}LastCoordinates`])
+                }
+                
             }
         })
         if (targetTrackSegment >= 0 && state.trackSegmentOccupants[targetTrackSegment].length > 1) {
