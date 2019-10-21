@@ -86,13 +86,17 @@
   left: 45px;
 }
 
-.tile,
+.desert-tile,
 .track-tile {
   position: absolute;
   -moz-user-select: none;
   -khtml-user-select: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.desert-tile {
+  z-index: 1;
 }
 
 .track-tile {

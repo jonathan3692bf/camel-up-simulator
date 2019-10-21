@@ -48,7 +48,7 @@ class GameBoard extends React.PureComponent {
         }
 
         DESERT_TILES.forEach(tile => {
-            state[`${tile}Coordinates`] = tile.includes(DESERT_TILE_TYPES[0]) ? {'top': '620px', 'left': '1000px'} : {'top': '530px', 'left': '1130px'}
+            state[`${tile}Coordinates`] = tile.includes(DESERT_TILE_TYPES[0]) ? {'top': '560px', 'left': '1160px'} : {'top': '650px', 'left': '1030px'} 
         })
 
         this.state = state
@@ -92,7 +92,11 @@ class GameBoard extends React.PureComponent {
             }
         }
         
-        const state = { draggedItems, mouseCoordinates: {} };
+        const state = { 
+            draggedItems, 
+            mouseCoordinates: {}, 
+            validMove: true
+        };
         
         document.body.className = 'no-touch-scroll'
         if (e.changedTouches && e.changedTouches.length) {
@@ -127,7 +131,10 @@ class GameBoard extends React.PureComponent {
         delta.top = currentMouseCoordinates.top - previousMouseCoordinates.top
         delta.left = currentMouseCoordinates.left - previousMouseCoordinates.left
         
-        const state = { 'beingDragged': true, 'mouseCoordinates': currentMouseCoordinates }
+        const state = { 
+            'beingDragged': true, 
+            'mouseCoordinates': currentMouseCoordinates 
+        }
         draggedItems.forEach((draggedItem, index) => {
             const previousItemCoordinates = this.removePX(this.state[`${draggedItem}Coordinates`])
             state[`${draggedItem}Coordinates`] = {
@@ -136,7 +143,34 @@ class GameBoard extends React.PureComponent {
             }
 
             if (this.state.trackSegmentBeingCovered >= 0) {
-                state[`${draggedItem}TrackSegment`] = this.state.trackSegmentBeingCovered
+                let currentTrackSegmentBeingCovered = this.state.trackSegmentBeingCovered
+                const currentTrackSegmentOccupants = this.state.trackSegmentOccupants[currentTrackSegmentBeingCovered]
+                if (DESERT_TILES.indexOf(draggedItem) > -1 && currentTrackSegmentOccupants.length) {
+                    state.validMove = false
+                    // state[`${draggedItem}TrackSegment`] = currentTrackSegmentBeingCovered
+                } else if (DESERT_TILES.indexOf(currentTrackSegmentOccupants[0]) > -1) {
+                    state.validMove = true
+                    if (DESERT_TILE_TYPES[0] == currentTrackSegmentOccupants[0].slice(0, -1)) {
+                        currentTrackSegmentBeingCovered++
+                        state[`${draggedItem}TrackSegment`] = currentTrackSegmentBeingCovered
+                        state.trackSegmentBeingCovered = currentTrackSegmentBeingCovered
+                    } else if (DESERT_TILE_TYPES[1] == currentTrackSegmentOccupants[0].slice(0, -1)) {
+                        currentTrackSegmentBeingCovered--
+                        state[`${draggedItem}TrackSegment`] = currentTrackSegmentBeingCovered
+                        state.trackSegmentBeingCovered = currentTrackSegmentBeingCovered
+                    }
+                } else {
+                    state.validMove = true
+                    state[`${draggedItem}TrackSegment`] = currentTrackSegmentBeingCovered
+                }
+                
+                // if the draggedItem is a desert tile and the occupiedTile is a desert tile
+                //     validMove = false
+                // if the draggedItem is a desert tile and the occupiedTile is not empty
+                //     validMove = false
+                // thus if draggedItem is a desert and the occupiedTrack is empty
+                //     validMOve = true
+                
             }
 
             if (TOUCHSCREEN && index === 0) {
@@ -193,6 +227,7 @@ class GameBoard extends React.PureComponent {
         document.body.className = ''
 
         const state = { 
+            'validMove': true,
             'beingDragged': false, 
             'draggedItems': [],
             'trackSegmentBeingCovered': undefined,
@@ -200,7 +235,7 @@ class GameBoard extends React.PureComponent {
         }
         const targetTrackSegment = this.state.trackSegmentBeingCovered
         draggedItems.forEach((draggedItem, index) => {
-            if (targetTrackSegment >= 0) {
+            if (targetTrackSegment >= 0 && this.state.validMove) {
                 state[`${draggedItem}Coordinates`] = this.removePX(TRACK_SEGMENT_COORDINATES[targetTrackSegment])
                 
                 const coordinates = state[`${draggedItem}Coordinates`]
@@ -312,6 +347,7 @@ class GameBoard extends React.PureComponent {
         return TRACK_SEGMENT_COORDINATES.map((coordinates, index) => {
             const tileNumber = index
             return <TrackSegment 
+                validMove={this.state.validMove}
                 camelBeingDragged={this.state.beingDragged} 
                 beingCovered={this.state.trackSegmentBeingCovered === tileNumber}
                 coordinates={coordinates} 
