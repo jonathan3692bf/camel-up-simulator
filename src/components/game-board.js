@@ -1,8 +1,13 @@
 import React from 'react';
+import { observer } from "mobx-react";
 import Camel from './camel'
 import DesertTile from './desert-tile'
 import TrackSegment from './track-segment'
-import DiceBar from './dice-bar'
+
+import DiceBarModel from './DiceBar/DiceBarModel'
+import DiceBar from './DiceBar/DiceBar'
+
+const diceBarStore = new DiceBarModel()
 
 const CAMELS = ['blue', 'yellow', 'orange', 'green', 'white'];
 const DESERT_TILE_TYPES = ['oasis', 'mirage']
@@ -34,7 +39,7 @@ const TRACK_SEGMENT_COORDINATES = [
     { top: '320px', left: '720px' }
 ]
 
-class GameBoard extends React.PureComponent {
+@observer class GameBoard extends React.PureComponent {
     constructor (props) {
         super(props);
         const state = { 
@@ -376,13 +381,7 @@ class GameBoard extends React.PureComponent {
             {this.renderTrackSegments()}
             {this.renderDesertTiles()}
             {this.renderCamels()}
-            <DiceBar onDiceClick={this.handleDiceClick} 
-                blueDiceRolled={this.state.blueDiceRolled}
-                greenDiceRolled={this.state.greenDiceRolled}
-                orangeDiceRolled={this.state.orangeDiceRolled}
-                whiteDiceRolled={this.state.whiteDiceRolled}
-                yellowDiceRolled={this.state.yellowDiceRolled}
-            />
+            <DiceBar store={diceBarStore} />
             <div className="gameboard-bottom"></div>
         </div>);
     }
