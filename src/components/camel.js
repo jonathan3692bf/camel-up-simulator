@@ -1,5 +1,5 @@
 import React from 'react';
-
+import { observer } from "mobx-react";
 import BLUE_CAMEL1 from '../images/Camel-Blue-1-0.png'
 import BLUE_CAMEL2 from '../images/Camel-Blue-2-0.png'
 import BLUE_CAMEL3 from '../images/Camel-Blue-3-0.png'
@@ -50,16 +50,16 @@ const RANK_IMAGES = {
     'right': [ RANK_1_RIGHT, RANK_2_RIGHT, RANK_3_RIGHT, RANK_4_RIGHT, RANK_5_RIGHT ]
 }
 
-function Camel (props) {
+const Camel = observer((props) => {
     const images = ICONS[`${props.color}`]
     const image = images[props.side > -1 ? props.side : 0]
     const rankSide = props.side % 2 === 0 ? 'right' : 'left'
     const rankImage = RANK_IMAGES[rankSide][props.rank - 1]
     const style = Object.assign({'zIndex': props.beingDragged ? '1' : props.zIndex + 2, 'cursor': props.beingDragged ? 'grabbing' : 'grab'}, props.coordinates)
-    return (<div className="camel" style={style} onMouseDown={props.handleMouseDown} onTouchStart={props.handleMouseDown}>
+    return (<div className="camel no-select" style={style} onMouseDown={props.handleMouseDown} onTouchStart={props.handleMouseDown}>
         <img className="camel-image" src={image} alt={`${props.color} camel`}/>
         <img className={`camel-rank camel-rank-${rankSide}-${props.side}`} src={rankImage} alt={`rank: ${props.rank}`}/>
     </div>);
-};
+})
 
 export default Camel;
