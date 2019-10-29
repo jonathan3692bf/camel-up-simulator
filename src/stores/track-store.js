@@ -44,9 +44,9 @@ export default class TrackStore {
     }
 
     @action updateTrackOccupants = (pieces, sourceSegment, targetSegment, fromMirage) => {
-        // It is possible that source or target could be undefined, that's alright
-        // when the target is undefined, the source likely is, and thus this results in removing a piece from the list
-        // when source is undefined, but target is, this means a pieces is just coming on to the board for the first time
+        // It is possible that source or target could be undefined, that's alright.
+        // When target is undefined, this results in removing a piece from the board
+        // When source is undefined, this means a pieces is just coming on to the board for the first time
         const newTrack = this.trackOccupants
         
         if (sourceSegment >= 0) {
@@ -64,7 +64,6 @@ export default class TrackStore {
             }
         }
         
-        // update the track and recalculate rank
         this.trackOccupants = newTrack
     }
 
@@ -84,6 +83,8 @@ export default class TrackStore {
     }
 
     adjustTrackSegmentCoordinates (trackSegment, positionInStack, desertTile) {
+        // Calculate the coordinates that each pieces should be moved to, based on
+        // trackSegment. Camels have a different offset than desert tiles, and can be stacked
         if (trackSegment >= 0 && positionInStack >= 0) {
             const coordinates = this.SEGMENT_COORDINATES[trackSegment].slice()
         

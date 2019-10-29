@@ -3,10 +3,9 @@ import { observer } from "mobx-react";
 import { useStores } from '../hooks/use-stores'
 import DesertTile from './desert-tile'
 
-
 const DesertTiles = observer(() => {
     const { desertTileStore, uiStore } = useStores()
-    return desertTileStore.DESERT_TILES.map((name, index) => {
+    return desertTileStore.tilesToBeRendered.map((name, index) => {
         return <DesertTile 
             type={name.slice(0, -1)} 
             name={name} 

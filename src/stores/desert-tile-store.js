@@ -5,19 +5,21 @@ export default class DesertTileStore {
   DESERT_TILE_DEFAULT_POSITIONS = [ [560, 1160], [650, 1030] ]
   DESERT_TILES = this.DESERT_TILE_TYPES.map(tile => {
     const enumeratedTiles = []
-    for (let i = 5; i > 0; i--) {
+    for (let i = 1; i <= 5; i++) {
         enumeratedTiles.push(`${tile}${i}`)
     }
     return enumeratedTiles
-  }).reduce((prev, current) => prev.concat(current))
+  })
 
-  @observable coordinates = this.DESERT_TILES.reduce((accu, current) => {
-    const [ OASIS_COORDINATES, MIRAGE_COORDINATES ] = this.DESERT_TILE_DEFAULT_POSITIONS
-    accu[current] = current.slice(0,-1) === this.DESERT_TILE_TYPES[0] ? OASIS_COORDINATES : MIRAGE_COORDINATES
-    return accu
-  }, {})
+  @observable coordinates = this.DESERT_TILES
+    .reduce((prev, current) => prev.concat(current))
+    .reduce((accu, current) => {
+      const [ OASIS_COORDINATES, MIRAGE_COORDINATES ] = this.DESERT_TILE_DEFAULT_POSITIONS
+      accu[current] = current.slice(0,-1) === this.DESERT_TILE_TYPES[0] ? OASIS_COORDINATES : MIRAGE_COORDINATES
+      return accu
+    }, {})
 
-  @observable trackSegmentLocation = this.DESERT_TILES.reduce((accu, current) => {
+  @observable trackSegmentLocation = this.DESERT_TILES.reduce((prev, current) => prev.concat(current)).reduce((accu, current) => {
     accu[current] = undefined
     return accu
   }, {})
@@ -27,6 +29,8 @@ export default class DesertTileStore {
   }
 
   @action updateDesertTileCoordinates = (name, coordinates) => {
+    // If the user drags the tile to a place on the screen which is not a track segment, coordinates will be 'undefined'. 
+    // In which case, we simply return the tile back to its default position
     if (coordinates) {
       this.coordinates[name] = coordinates
     } else {
@@ -44,17 +48,27 @@ export default class DesertTileStore {
     return newTrackSegment
   }
 
-  @computed get numberOfPlacedTiles () {
-    let number = 0
-    // for (let tile in this.coordinates) {
-    //   const currentCoordinates = this.getDesertTileCoordinates(tile)
-    //   const [ OASIS_COORDINATES, MIRAGE_COORDINATES ] = this.DESERT_TILE_DEFAULT_POSITIONS
-    //   const DEFAULT_COORDINATES = this.DESERT_TILE_TYPES[0] ? OASIS_COORDINATES : MIRAGE_COORDINATES
-    //   if (currentCoordinates == DEFAULT_COORDINATES) number++
-    // }
-    for (let tile in this.trackSegmentLocation) {
-      if (this.getDesertTileTrackSegmentLocation(tile) !== undefined) number++
+  @computed get tilesToBeRendered () {
+    // Figure out which desert tiles to render based on which have been placed
+    // plus and aditional set of oasis and mirage tiles. 
+    const oasisPool = this.DESERT_TILES[0].slice()
+    const miragePool = this.DESERT_TILES[1].slice()
+    const tiles = []
+    const numberOfAssignedTiles = [0, 0]
+    const [ oasisRemainder, mirageRemainder ] = [oasisPool, miragePool].map((pool, index) => pool.map(tile => {
+      // Map through both pools to find which desert tiles have been placed. Transform those into '' (empty strings)
+      // to be filtered out. The filtered array becomes the 'remainder' by which we pull our additional set of tiles.
+      if (this.getDesertTileTrackSegmentLocation(tile) !== undefined) {
+        tiles.push(tile);
+        numberOfAssignedTiles[index]++
+        return ''
+      }
+      return tile
+    }).filter(tile => tile !== ''))
+    // Only put out an additional set of tiles if we are not at the limit (5) of playable tiles
+    if (numberOfAssignedTiles[0] + numberOfAssignedTiles[1] < oasisPool.length) {
+      tiles.push(oasisRemainder.shift(), mirageRemainder.shift())
     }
-    return number
+    return tiles
   }
 }

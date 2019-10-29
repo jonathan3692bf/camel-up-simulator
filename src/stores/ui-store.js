@@ -6,7 +6,7 @@ export default class UIStore {
         this.camelStore = camelStore
         this.desertTileStore = desertTileStore
     }
-    
+
     @observable beingDragged = false
     @observable draggedItems = []
     @observable mirageSelected = false
@@ -37,9 +37,14 @@ export default class UIStore {
     }
 
     @action handleCamelDragStart = (camel) => {
+        // Dragging a camel may also imply dragging a stack of camel, which can only happen once
+        // camels have been moved on to the board.
         const startTrackSegement = this.camelStore.getCamelTrackSegmentLocation(camel, 'current')
         
         if (startTrackSegement >= 0) {
+            // Once on the board, we should check to see if the dragged camel is occupying the
+            // same space as other camels.
+            // If so, we should find it's position in that stack, and "grab" all the pieces above it.
             const trackSegmentOccupants = this.trackStore.trackOccupants[startTrackSegement]
             if (trackSegmentOccupants.length) {
                 const positionOfStack = trackSegmentOccupants.indexOf(camel)
@@ -58,9 +63,10 @@ export default class UIStore {
         e.preventDefault()
         this.validMove = true
         this.piecesBeingDragged = [ draggedPiece ]
+        // Change the document.body class to help with scroll issues on mobile
         if (document && document.body) document.body.className = 'no-touch-scroll'
         
-        if (this.desertTileStore.DESERT_TILES.indexOf(draggedPiece) === -1) {
+        if (this.desertTileStore.tilesToBeRendered.indexOf(draggedPiece) === -1) {
             return this.handleCamelDragStart(draggedPiece)
         }
     }
@@ -69,8 +75,35 @@ export default class UIStore {
         const sourceTrackSegment = this.desertTileStore.getDesertTileTrackSegmentLocation(tile)
         if (targetTrackSegment >= 0) {
             if (targetTrackSegmentOccupants.length && sourceTrackSegment !== targetTrackSegment) {
+                // This is the easiest case to check for. Desert tiles cannot be placed where there are
+                // other desert tiles or camels
                 this.validMove = false
             } else {
+                // This is the trickier case where we now need to follow the game rules which state that
+                // desert tiles may not be placed adjacent to other desert tiles
+                const adjacentOccupants = [ this.trackStore.trackOccupants[targetTrackSegment + 1], this.trackStore.trackOccupants[targetTrackSegment - 1] ]
+                // Camel Up rules dictate that desert tiles may not be placed on the 1st track segment
+                if (targetTrackSegment === 0) {
+                    adjacentOccupants.splice(0, adjacentOccupants.length)
+                    this.validMove = false
+                }
+                // We also need to avoid out of bounds issues by not trying to check the (last + 1) track segment
+                if (targetTrackSegment === this.trackStore.trackOccupants.length - 1) {
+                    adjacentOccupants.shift()
+                }
+                for (let i = 0; i < adjacentOccupants.length; i++) {
+                    // Avoid the situation where moving an existing tile is impossible because 
+                    // the tile is still on the track segment until the drag is over.
+                    // To do this, we first check to see if there is anything on the adjacent tile.
+                    if (adjacentOccupants[i].length) {
+                        // Then we check that the occupant there is neither the desert tile currently being dragged, 
+                        // nor any other legally placed desert tile
+                        if (adjacentOccupants[i][0] !== tile && this.desertTileStore.tilesToBeRendered.indexOf(adjacentOccupants[i][0]) > -1)
+                            this.validMove = false
+                    }
+                    
+                }
+                // At this point, the currently dragged desert tile is neither laying on an occupied track segment, nor surrounded by other desert tiles.
                 const positionOffset = 0
                 const adjustedCoordinates = this.trackStore.adjustTrackSegmentCoordinates(targetTrackSegment, positionOffset, true)
                 this.desertTileStore.updateDesertTileCoordinates(tile, adjustedCoordinates)
@@ -80,8 +113,13 @@ export default class UIStore {
     }
 
     @action moveCamel = (sourceTrackSegment, targetTrackSegment, toBottomOfStack, camel, index) => {
+        // Here we only "move" the camel if it's target is a track segment.
         if (targetTrackSegment >= 0) {
             const targetTrackSegmentOccupants = this.trackStore.trackOccupants[targetTrackSegment]
+            // Where that camel lands on the stack, however, depends on where it is coming from.
+            // Camels affected by Mirages and Oases effectively rebuild the whole stack, and thus
+            // must start from the bottom.
+            // Conversely, camels moved via normal drag and drop, will sit on top of the stack.
             let positionOffset = toBottomOfStack ? index : targetTrackSegmentOccupants.length + index
             if (sourceTrackSegment === targetTrackSegment) {
                 positionOffset = targetTrackSegmentOccupants.indexOf(camel)
@@ -89,6 +127,7 @@ export default class UIStore {
             const adjustedCoordinates = this.trackStore.adjustTrackSegmentCoordinates(targetTrackSegment, positionOffset, false)
             this.camelStore.updateCamelCoordinates(camel, 'current', adjustedCoordinates, false)
         }
+        // targetTrackSegment === 'undefined' will send the camel back from whence it came.
         this.camelStore.updateCamelTrackSegmentLocation(camel, 'current', targetTrackSegment)
     }
 
@@ -96,8 +135,10 @@ export default class UIStore {
         const sourceTrackSegment = this.camelStore.getCamelTrackSegmentLocation(camels[0], 'previous')
         if (targetTrackSegment >= 0) {
             const numberOfSegmentOccupants = targetTrackSegmentOccupants.length
-        
+            // We should check that whether a user is attempting to drop a camel atop a mirage or oasis
             if (numberOfSegmentOccupants === 1) {
+                // Here we abuse desertTileStore.DESERT_TILE_TYPES to determine which type of tile
+                // is being covered. This requires strict value checking (either 0, or 1).
                 const occupantType = targetTrackSegmentOccupants[0].slice(0, -1)
                 const desertType = this.desertTileStore.DESERT_TILE_TYPES.indexOf(occupantType)
                 if (desertType === 0) {
@@ -126,7 +167,7 @@ export default class UIStore {
         const draggedPieces = this.piecesBeingDragged
         const targetTrackSegment = this.trackStore.segmentBeingCovered
         const targetTrackSegmentOccupants = this.trackStore.trackOccupants[targetTrackSegment]
-        const desertTile = this.desertTileStore.DESERT_TILES.indexOf(draggedPieces[0]) > -1
+        const desertTile = this.desertTileStore.tilesToBeRendered.indexOf(draggedPieces[0]) > -1
         if (desertTile) {
             return this.handleDesertTileDrag(draggedPieces[0], targetTrackSegment, targetTrackSegmentOccupants)
         } else {
@@ -144,8 +185,8 @@ export default class UIStore {
                 this.desertTileStore.updateDesertTileTrackSegmentLocation(tile, targetTrackSegment)   
             }
         } else {
-            // Here the move was either invalid or to a place on the board which was not a track segment
-            // return desert tile to its previous location. 
+            // Here the move was either invalid or to a place on the board which was not a track segment,
+            // in either case: return desert tile to its previous location. 
             // If sourceTrackSegment === undefined, then it goes back to its default posiiton
             let reset
             if (!this.validMove) {
@@ -160,9 +201,7 @@ export default class UIStore {
             this.desertTileStore.updateDesertTileCoordinates(tile, adjustedCoordinates)
             this.desertTileStore.updateDesertTileTrackSegmentLocation(tile, reset)
             
-            
             this.trackStore.updateTrackOccupants([ tile ], sourceTrackSegment, reset)
-            
         }
         this.resetUIState()
     }
@@ -171,9 +210,10 @@ export default class UIStore {
         const sourceTrackSegment = this.camelStore.getCamelTrackSegmentLocation(camels[0], 'previous')
 
         if (targetTrackSegment >= 0 && this.validMove) {
-            // iff the dragged pieces have gone somewhere new should we update the track state
+            // Check if camels are about to be dropped over a desert tile
             if (this.oasisSelected || this.mirageSelected) {
                 targetTrackSegment += this.oasisSelected ? 1 : -1
+                // Update the whole track, AND then move all the camels based on the track update
                 this.trackStore.updateTrackOccupants(camels, sourceTrackSegment, targetTrackSegment, this.mirageSelected)
                 this.trackStore.trackOccupants[targetTrackSegment].forEach(this.moveCamel.bind(this, sourceTrackSegment, targetTrackSegment, true))
             } else if (sourceTrackSegment !== targetTrackSegment) {
@@ -181,9 +221,8 @@ export default class UIStore {
             }
             this.camelStore.raceRank = this.trackStore.calculateRank
         } else {
+            // targetTrackSegement === undefined, return camels to their previous locations.
             camels.forEach(camel => {
-                // return camels to their previous locations.
-                // may not be necessary.
                 this.camelStore.updateCamelTrackSegmentLocation(camel, 'current', this.camelStore.getCamelTrackSegmentLocation(camel, 'previous'))
                 this.camelStore.updateCamelCoordinates(camel, 'current', this.camelStore.getCamelCoordinates(camel, 'previous'), false)
             })
@@ -202,7 +241,7 @@ export default class UIStore {
         
         const draggedPieces = this.piecesBeingDragged
         const targetTrackSegment = this.trackStore.segmentBeingCovered
-        const desertTile = this.desertTileStore.DESERT_TILES.indexOf(draggedPieces[0]) > -1
+        const desertTile = this.desertTileStore.tilesToBeRendered.indexOf(draggedPieces[0]) > -1
         
         if (desertTile) {
             return this.handleDesertTileDragEnd(draggedPieces[0], targetTrackSegment)
