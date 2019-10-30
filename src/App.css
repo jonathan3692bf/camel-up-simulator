@@ -1,3 +1,14 @@
+@font-face {
+  font-family: Vollkorn;
+  src: url("./fonts/Vollkorn-Bold.ttf");
+  font-weight: bold;
+}
+
+body {
+  font-family: Vollkorn;
+  color: #623b19;
+}
+
 .gameboard {
   background-image: url("./images/Game-Background.png");
   background-repeat: no-repeat;
@@ -50,6 +61,49 @@
 
 .gameboard-dice-bar-hitbox img.rolled {
   opacity: 1;
+}
+
+.scoreboard-row {
+  display: flex;
+  align-items: center;
+}
+
+.scoreboard-row__place,
+.scoreboard-row__probability {
+  flex: auto;
+}
+
+.scoreboard-row__place {
+  padding-left: 1em;
+}
+
+.scoreboard-row.first-place .scoreboard-row__place {
+  padding-left: 2em;
+}
+
+.scoreboard-row.first-place .scoreboard-row__camel-icon {
+  padding-right: 18px;
+}
+
+.scoreboard-row__camel-icon {
+  height: 42px;
+  width: 52px;
+  flex-grow: 0;
+  float: auto;
+}
+
+.scoreboard-row.first-place {
+  font-size: 24px;
+  height: 87px;
+  width: 302px;
+  background-image: url("./images/Active-Player-Box.png");
+}
+
+.scoreboard-row.not-first-place {
+  height: 31px;
+  width: 215px;
+  background-image: url("./images/Player-Box.png");
+  margin-left: 8px;
 }
 
 .no-touch-scroll {

@@ -6,12 +6,14 @@ import DiceBar from './dice-bar'
 import Camels from './camels'
 import Track from './track'
 import DesertTiles from './desert-tiles'
+import Scoreboard from './scoreboard'
 
 const GameBoard = observer(() => {
     const { uiStore } = useStores()
     return (<div className="gameboard" onMouseMove={uiStore.handleDrag} onTouchMove={uiStore.handleDrag} onMouseUp={uiStore.handleDragEnd} onTouchEnd={uiStore.handleDragEnd}>
         <div className="gameboard-top"></div>
-        <Track uiStore={uiStore} />
+        <Scoreboard uiStore={uiStore}/>
+        <Track />
         <Camels />
         <DesertTiles />
         <DiceBar />

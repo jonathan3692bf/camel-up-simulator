@@ -1,10 +1,45 @@
-import { observable, action, computed } from 'mobx'
+import { observable, action, computed, autorun } from 'mobx'
+import requestProbabilities from '../helper-functions'
 
 export default class UIStore {
-    constructor (trackStore, camelStore, desertTileStore) {
+    constructor (trackStore, camelStore, desertTileStore, scoreboardStore, diceStore) {
         this.trackStore = trackStore
         this.camelStore = camelStore
         this.desertTileStore = desertTileStore
+        this.scoreboardStore = scoreboardStore
+        this.diceStore = diceStore
+
+        autorun(async () => {
+            // Here we have our code which takes the state of the board and transforms it into a shape that
+            // can be given to our probability function.
+            // 1) Don't request new probabilities until the user is done dragging things around
+            if (this.draggedState) return
+            const gameState = {
+                'state_of_play': { 'camels': [], 'tiles': [] },
+                'sig_figs': 3
+            }
+            const diceRolled = this.diceStore.dieState
+            let gameHasNotYetBegun = false
+            this.camelStore.raceRank.forEach(color => {
+                // Loop through the camel store to find each camel's location and whether their dice has been "turned on"
+                const location = this.camelStore.getCamelTrackSegmentLocation(color, 'current')
+                if (location === undefined) gameHasNotYetBegun = true
+                gameState.state_of_play.camels.push({ color, location, 'already_moved': diceRolled[color]})
+            })
+            // 2) Don't request new probabilities until all the camels are on the board
+            if (gameHasNotYetBegun) return
+            this.desertTileStore.tilesToBeRendered.forEach(tile => {
+                // Loop through the desert tile store to find which tiles have been placed on the board
+                const location = this.desertTileStore.getDesertTileTrackSegmentLocation(tile)
+                if (location >= 0) {
+                    const effect = tile.slice(0,-1) === this.desertTileStore.DESERT_TILE_TYPES[0] ? 1 : -1
+                    gameState.state_of_play.tiles.push({ location, effect })
+                }
+            })
+            const newProbabilities = await requestProbabilities(gameState)
+            this.scoreboardStore.handleProbabilityUpdate(newProbabilities)
+            // 3) Debounce requests by half a second to allow for corrections (e.g. when the user selects the wrong segment)
+        }, { delay: 500 })
     }
 
     @observable beingDragged = false
