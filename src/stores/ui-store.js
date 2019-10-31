@@ -22,16 +22,22 @@ export default class UIStore {
             let gameHasNotYetBegun = false
             this.camelStore.raceRank.forEach(color => {
                 // Loop through the camel store to find each camel's location and whether their dice has been "turned on"
-                const location = this.camelStore.getCamelTrackSegmentLocation(color, 'current')
-                if (location === undefined) gameHasNotYetBegun = true
-                gameState.state_of_play.camels.push({ color, location, 'already_moved': diceRolled[color]})
+                // Track segments on the server start with 1 - 16.
+                let location = this.camelStore.getCamelTrackSegmentLocation(color, 'current')
+                if (location >= 0) {
+                    location++
+                    gameState.state_of_play.camels.push({ color, location, 'already_moved': diceRolled[color]})
+                } else {
+                    gameHasNotYetBegun = true
+                }
             })
             // 2) Don't request new probabilities until all the camels are on the board
             if (gameHasNotYetBegun) return
             this.desertTileStore.tilesToBeRendered.forEach(tile => {
                 // Loop through the desert tile store to find which tiles have been placed on the board
-                const location = this.desertTileStore.getDesertTileTrackSegmentLocation(tile)
+                let location = this.desertTileStore.getDesertTileTrackSegmentLocation(tile)
                 if (location >= 0) {
+                    location++
                     const effect = tile.slice(0,-1) === this.desertTileStore.DESERT_TILE_TYPES[0] ? 1 : -1
                     gameState.state_of_play.tiles.push({ location, effect })
                 }
