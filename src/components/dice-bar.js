@@ -14,7 +14,7 @@ const DiceBar = observer(() => {
     const { diceStore } = useStores()
     return (<div className="gameboard-dice-bar">
         {Object.entries(diceStore.dieState).map(([color, rolled]) => (
-        <div className="gameboard-dice-bar-hitbox" onClick={() => diceStore.handleDiceClick(color)} key={color}>
+        <div className="gameboard-dice-bar-hitbox no-select" onMouseDown={() => diceStore.handleDiceClick(color)} onTouchStart={() => diceStore.handleDiceClick(color)} key={color}>
             <img src={DIE_IMAGES[`${color.toUpperCase()}_DICE`]} className={rolled ? 'rolled' : ''} alt={`${color} dice`} />
         </div>
         ))}

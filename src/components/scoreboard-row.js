@@ -19,7 +19,7 @@ function renderRow (place, probability, color) {
     return (<div className={`scoreboard-row ${place === 1 ? 'first-place' : 'not-first-place'}`}>
     <span className="scoreboard-row__place">Place {place}:</span>
     <span className="scoreboard-row__probability">{probability}</span>
-    <img className="scoreboard-row__camel-icon" src={symbols[`${color.toUpperCase()}_CAMEL`]} alt={`${color} camel`}/>
+    <img className="scoreboard-row__camel-icon no-select" src={symbols[`${color.toUpperCase()}_CAMEL`]} alt={`${color} camel`}/>
 </div>)
 }
 
