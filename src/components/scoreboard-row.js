@@ -15,13 +15,22 @@ const symbols = {
     YELLOW_CAMEL
 }
 
+function renderRow (place, probability, color) {
+    return (<div className={`scoreboard-row ${place === 1 ? 'first-place' : 'not-first-place'}`}>
+    <span className="scoreboard-row__place">Place {place}:</span>
+    <span className="scoreboard-row__probability">{probability}</span>
+    <img className="scoreboard-row__camel-icon" src={symbols[`${color.toUpperCase()}_CAMEL`]} alt={`${color} camel`}/>
+</div>)
+}
+
 const ScoreboardRow = observer((props) => {
-    const style = {}//Object.assign({'cursor': props.beingDragged ? 'grabbing' : 'grab'}, props.coordinates)
-    return (<div className={`scoreboard-row ${props.place === 1 ? 'first-place' : 'not-first-place'}`} style={style} >
-        <span className="scoreboard-row__place">Place {props.place}:</span>
-        <span className="scoreboard-row__probability">{props.probability}</span>
-        <img className="scoreboard-row__camel-icon" src={symbols[`${props.color.toUpperCase()}_CAMEL`]} alt={`${props.color} camel`}/>
-    </div>);
+    if (props.text) {
+        return (<div className={`scoreboard-row first-place`}>
+            <span className="scoreboard-row__place">{props.text}</span>
+        </div>)
+    } else {
+        return renderRow(props.place, props.probability, props.color)
+    }
 })
 
 export default ScoreboardRow

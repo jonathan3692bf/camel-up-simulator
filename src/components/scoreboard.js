@@ -5,9 +5,10 @@ import ScoreboardRow from './scoreboard-row'
 
 const ScoreBoard = observer(() => {
     const { scoreboardStore } = useStores()
+    const display = scoreboardStore.isUpdating ? [ { text: 'Calculating...' } ] : scoreboardStore.raceProbabilities
     return (<div className="scoreboard-container">
-        {scoreboardStore.raceProbabilities.map(({ color, probability }, index) => 
-            <ScoreboardRow key={index} color={color} place={index + 1} probability={`${Math.round(probability * 100)}%`}/>
+        {display.map(({ color, probability, text }, index) => 
+            <ScoreboardRow key={index} color={color} place={index + 1} probability={`${Math.round(probability * 100)}%`} text={text}/>
         )}
     </div>)
 })

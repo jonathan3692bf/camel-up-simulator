@@ -36,8 +36,12 @@ export default class UIStore {
                     gameState.state_of_play.tiles.push({ location, effect })
                 }
             })
+            this.scoreboardStore.isUpdating = true
             const newProbabilities = await requestProbabilities(gameState)
-            if (newProbabilities) this.scoreboardStore.handleProbabilityUpdate(newProbabilities)
+            if (newProbabilities) {
+                this.scoreboardStore.handleProbabilityUpdate(newProbabilities)
+            }
+            this.scoreboardStore.isUpdating = false
             // 3) Debounce requests by half a second to allow for corrections (e.g. when the user selects the wrong segment)
         }, { delay: 500 })
     }
