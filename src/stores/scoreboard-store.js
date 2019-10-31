@@ -1,4 +1,4 @@
-import { observable, action, computed } from "mobx";
+import { observable, action } from "mobx";
 
 export default class ScoreboardStore {
     COLORS = [ 'blue', 'green', 'orange', 'white', 'yellow']

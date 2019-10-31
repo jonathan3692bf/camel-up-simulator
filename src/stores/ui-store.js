@@ -37,7 +37,7 @@ export default class UIStore {
                 }
             })
             const newProbabilities = await requestProbabilities(gameState)
-            this.scoreboardStore.handleProbabilityUpdate(newProbabilities)
+            if (newProbabilities) this.scoreboardStore.handleProbabilityUpdate(newProbabilities)
             // 3) Debounce requests by half a second to allow for corrections (e.g. when the user selects the wrong segment)
         }, { delay: 500 })
     }
